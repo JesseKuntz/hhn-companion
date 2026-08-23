@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { HOUSES_ALPHABETICAL, HOUSE_BY_ID } from '../constants/houses';
 import { COLORS, FONTS } from '../constants/theme';
+import { exportVisitsAsJson } from '../utils/export';
 import type { Visit } from '../types';
 
 type DayGroup = {
@@ -88,6 +89,13 @@ export default function HistoryScreen({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>History</Text>
+      <Pressable
+        style={[styles.exportButton, visits.length === 0 && styles.exportButtonDisabled]}
+        onPress={() => exportVisitsAsJson(visits)}
+        disabled={visits.length === 0}
+      >
+        <Text style={styles.exportButtonText}>📤 Export Data (JSON)</Text>
+      </Pressable>
       <FlatList
         data={days}
         keyExtractor={(day) => day.key}
@@ -184,7 +192,24 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.display,
     textAlign: 'center',
     marginTop: 12,
+    marginBottom: 12,
+  },
+  exportButton: {
+    borderWidth: 1,
+    borderColor: COLORS.neonTeal,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginHorizontal: 16,
     marginBottom: 16,
+  },
+  exportButtonDisabled: {
+    opacity: 0.4,
+  },
+  exportButtonText: {
+    color: COLORS.neonTeal,
+    fontFamily: FONTS.semiBold,
+    fontSize: 14,
   },
   list: {
     paddingHorizontal: 16,
