@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 100,
   },
   empty: {
     color: COLORS.textMuted,

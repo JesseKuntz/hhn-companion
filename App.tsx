@@ -106,7 +106,10 @@ export default function App() {
           {TABS.map((tab, index) => (
             <Pressable
               key={tab.key}
-              style={styles.tabButton}
+              style={[
+                styles.tabButton,
+                pageIndex === index && styles.tabButtonActive,
+              ]}
               onPress={() => goToPage(index)}
             >
               <Text style={styles.tabIcon}>{tab.icon}</Text>
@@ -139,15 +142,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 16,
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
     backgroundColor: COLORS.surface,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 10,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     alignItems: 'center',
+    borderRadius: 26,
+  },
+  tabButtonActive: {
+    backgroundColor: COLORS.neonRedTint,
   },
   tabIcon: {
     fontSize: 20,

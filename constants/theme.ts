@@ -5,6 +5,7 @@ export const COLORS = {
   border: '#232b3a',
   neonRed: '#ff2b4e',
   neonRedSoft: 'rgba(255, 43, 78, 0.4)',
+  neonRedTint: 'rgba(255, 43, 78, 0.16)',
   neonTeal: '#2de2c9',
   text: '#f5f6fa',
   textMuted: '#8a94a6',

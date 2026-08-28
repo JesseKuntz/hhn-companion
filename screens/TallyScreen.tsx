@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 100,
   },
   row: {
     minHeight: 100,
