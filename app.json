@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.jessekuntz.hhncompanion",
       "adaptiveIcon": {
         "backgroundColor": "#0a0e14",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -31,6 +32,11 @@
           "backgroundColor": "#0a0e14"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c66cbf9f-ff47-4a6e-8341-4d90bd3591be"
+      }
+    }
   }
 }
