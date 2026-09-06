@@ -112,8 +112,8 @@ export default function HistoryScreen({
                 <View key={visit.id} style={styles.visitRow}>
                   <ImageBackground
                     source={house?.image}
-                    style={StyleSheet.absoluteFillObject}
-                    imageStyle={styles.rowImage}
+                    style={styles.imageFill}
+                    resizeMode="cover"
                   >
                     <View style={styles.overlay} />
                   </ImageBackground>
@@ -240,11 +240,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  rowImage: {
-    resizeMode: 'cover',
+  imageFill: {
+    ...StyleSheet.absoluteFill,
+    width: '100%',
+    height: '100%',
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: COLORS.overlay,
   },
   visitContent: {

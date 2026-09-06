@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import {
   SafeAreaProvider,
   SafeAreaView,
 } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import PagerView from 'react-native-pager-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts, Creepster_400Regular } from '@expo-google-fonts/creepster';
 import {
@@ -21,6 +29,7 @@ import { COLORS, FONTS } from './constants/theme';
 import type { Visit } from './types';
 
 const STORAGE_KEY = 'hhn_visits';
+const MAX_CONTENT_WIDTH = 480;
 const TABS = [
   { key: 'tally', label: 'Tally', icon: '🏚️' },
   { key: 'history', label: 'History', icon: '🗓️' },
@@ -45,7 +54,9 @@ export default function App() {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
-  const pagerRef = useRef<PagerView>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const { width } = useWindowDimensions();
+  const pageWidth = Math.min(width, MAX_CONTENT_WIDTH);
 
   const [fontsLoaded] = useFonts({
     Creepster_400Regular,
@@ -75,7 +86,16 @@ export default function App() {
   };
 
   const goToPage = (index: number) => {
-    pagerRef.current?.setPage(index);
+    scrollRef.current?.scrollTo({ x: index * pageWidth, animated: true });
+    // Set immediately rather than waiting on a scroll-end event: react-native-web
+    // never fires onMomentumScrollEnd, so a tab click would otherwise never
+    // update the highlight on web.
+    setPageIndex(index);
+  };
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const newIndex = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
+    setPageIndex(newIndex);
   };
 
   if (!fontsLoaded) {
@@ -84,55 +104,67 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        <PagerView
-          ref={pagerRef}
-          style={styles.content}
-          initialPage={0}
-          onPageSelected={(e) => setPageIndex(e.nativeEvent.position)}
-        >
-          <View key="tally" style={styles.page}>
-            <TallyScreen visits={visits} onTally={addVisit} />
-          </View>
-          <View key="history" style={styles.page}>
-            <HistoryScreen
-              visits={visits}
-              onAddVisit={addVisit}
-              onRemoveVisit={removeVisit}
-            />
-          </View>
-        </PagerView>
-        <View style={styles.tabBar}>
-          {TABS.map((tab, index) => (
-            <Pressable
-              key={tab.key}
-              style={[
-                styles.tabButton,
-                pageIndex === index && styles.tabButtonActive,
-              ]}
-              onPress={() => goToPage(index)}
-            >
-              <Text style={styles.tabIcon}>{tab.icon}</Text>
-              <Text
+      <View style={styles.outer}>
+        <SafeAreaView style={styles.container}>
+          <ScrollView
+            ref={scrollRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            style={styles.content}
+          >
+            <View key="tally" style={[styles.page, { width: pageWidth }]}>
+              <TallyScreen visits={visits} onTally={addVisit} />
+            </View>
+            <View key="history" style={[styles.page, { width: pageWidth }]}>
+              <HistoryScreen
+                visits={visits}
+                onAddVisit={addVisit}
+                onRemoveVisit={removeVisit}
+              />
+            </View>
+          </ScrollView>
+          <View style={styles.tabBar}>
+            {TABS.map((tab, index) => (
+              <Pressable
+                key={tab.key}
                 style={[
-                  styles.tabText,
-                  pageIndex === index && styles.tabTextActive,
+                  styles.tabButton,
+                  pageIndex === index && styles.tabButtonActive,
                 ]}
+                onPress={() => goToPage(index)}
               >
-                {tab.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <StatusBar style="light" />
-      </SafeAreaView>
+                <Text style={styles.tabIcon}>{tab.icon}</Text>
+                <Text
+                  style={[
+                    styles.tabText,
+                    pageIndex === index && styles.tabTextActive,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <StatusBar style="light" />
+        </SafeAreaView>
+      </View>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  outer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
     backgroundColor: COLORS.background,
   },
   content: {

@@ -79,14 +79,18 @@ function HouseRow({ house, count, onTally, setActiveCancel }: HouseRowProps) {
     <Pressable onPressIn={startPress} onPressOut={endPress} style={styles.row}>
       <ImageBackground
         source={house.image}
-        style={StyleSheet.absoluteFillObject}
-        imageStyle={styles.rowImage}
+        style={styles.imageFill}
+        resizeMode="cover"
       >
         <View style={styles.overlay} />
         <Animated.View
           style={[
             styles.progressFill,
             {
+              // Animated.Value is intentionally mutated outside React's render
+              // cycle; reading it here to derive a style is the documented
+              // pattern and doesn't break render purity despite the lint rule.
+              // eslint-disable-next-line react-hooks/refs
               width: progress.interpolate({
                 inputRange: [0, 1],
                 outputRange: ['0%', '100%'],
@@ -182,11 +186,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  rowImage: {
-    resizeMode: 'cover',
+  imageFill: {
+    ...StyleSheet.absoluteFill,
+    width: '100%',
+    height: '100%',
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: COLORS.overlay,
   },
   progressFill: {
