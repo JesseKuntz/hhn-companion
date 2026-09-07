@@ -185,6 +185,9 @@ const styles = StyleSheet.create({
     position: 'relative',
     borderWidth: 1,
     borderColor: COLORS.border,
+    // Long-pressing to tally reads as "select this text" to a browser by
+    // default; userSelect inherits to children so this covers the whole row.
+    userSelect: 'none',
   },
   imageFill: {
     ...StyleSheet.absoluteFill,
