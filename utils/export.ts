@@ -20,9 +20,7 @@ function buildExportPayload(visits: Visit[]) {
   };
 }
 
-// expo-file-system's File/Paths API has no web implementation, and expo-sharing's
-// web fallback (navigator.share) can't share arbitrary local files. Browsers
-// download files via a Blob + temporary anchor click instead.
+// no File/Paths or share API on web, so trigger a download via Blob instead
 function exportOnWeb(visits: Visit[]): void {
   const payload = buildExportPayload(visits);
   const blob = new Blob([JSON.stringify(payload, null, 2)], {

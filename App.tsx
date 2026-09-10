@@ -39,7 +39,7 @@ function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// Migrates records saved by the old { house, timestamp } schema to { id, houseId, timestamp }.
+// migrate old { house, timestamp } records to { id, houseId, timestamp }
 function migrateVisit(visit: any): Visit {
   if (visit.houseId) return visit;
   const match = HOUSES.find((h) => h.name === visit.house);
@@ -87,9 +87,7 @@ export default function App() {
 
   const goToPage = (index: number) => {
     scrollRef.current?.scrollTo({ x: index * pageWidth, animated: true });
-    // Set immediately rather than waiting on a scroll-end event: react-native-web
-    // never fires onMomentumScrollEnd, so a tab click would otherwise never
-    // update the highlight on web.
+    // react-native-web doesn't fire onMomentumScrollEnd, so update right away
     setPageIndex(index);
   };
 

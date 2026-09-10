@@ -15,9 +15,7 @@ import { COLORS, FONTS } from '../constants/theme';
 import type { Visit } from '../types';
 
 const HOLD_DURATION_MS = 1200;
-// Swallows the first moments of a touch so a scroll gesture never triggers a tally
-// or even the initial haptic tick. Scroll recognition can take a little while to
-// kick in on a real device, so this needs real margin, not just a token delay.
+// delay before arming the hold, so a scroll gesture doesn't trigger a tally
 const ARM_DELAY_MS = 280;
 
 type HouseRowProps = {
@@ -87,10 +85,7 @@ function HouseRow({ house, count, onTally, setActiveCancel }: HouseRowProps) {
           style={[
             styles.progressFill,
             {
-              // Animated.Value is intentionally mutated outside React's render
-              // cycle; reading it here to derive a style is the documented
-              // pattern and doesn't break render purity despite the lint rule.
-              // eslint-disable-next-line react-hooks/refs
+              // eslint-disable-next-line react-hooks/refs -- standard Animated.Value usage
               width: progress.interpolate({
                 inputRange: [0, 1],
                 outputRange: ['0%', '100%'],
@@ -185,8 +180,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     borderWidth: 1,
     borderColor: COLORS.border,
-    // Long-pressing to tally reads as "select this text" to a browser by
-    // default; userSelect inherits to children so this covers the whole row.
+    // prevent text selection from the long-press on web
     userSelect: 'none',
   },
   imageFill: {
