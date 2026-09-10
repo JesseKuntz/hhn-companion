@@ -1,12 +1,13 @@
 <p align="center">
-  <img alt="HHN Companion Icon" src="./assets/icon.png" width="120" />
+  <a href="https://jessekuntz.github.io/hhn-companion">
+    <img alt="HHN Companion Icon" src="./assets/icon.png" width="120" />
+  </a>
 </p>
 <h1 align="center">
   HHN Companion
 </h1>
-<p align="center">
-  Track which Halloween Horror Nights houses you've hit. Press and hold to tally a visit, browse your history by day, and export your data.
-</p>
+
+### [👉 Full Project Description 👈](https://jessekuntz.github.io/hhn-companion)
 
 ## Running Things
 
