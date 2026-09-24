@@ -12,6 +12,7 @@ import {
 import { HOUSES_ALPHABETICAL, HOUSE_BY_ID } from '../constants/houses';
 import { COLORS, FONTS } from '../constants/theme';
 import { exportVisitsAsJson } from '../utils/export';
+import { importVisitsFromJson, notifyImportResult } from '../utils/import';
 import type { Visit } from '../types';
 
 type DayGroup = {
@@ -49,12 +50,14 @@ type HistoryScreenProps = {
   visits: Visit[];
   onAddVisit: (houseId: string, timestamp?: string) => void;
   onRemoveVisit: (visitId: string) => void;
+  onImportVisits: (visits: Visit[]) => number;
 };
 
 export default function HistoryScreen({
   visits,
   onAddVisit,
   onRemoveVisit,
+  onImportVisits,
 }: HistoryScreenProps) {
   const [addingForDay, setAddingForDay] = useState<string | null>(null);
 
@@ -86,16 +89,33 @@ export default function HistoryScreen({
     setAddingForDay(null);
   };
 
+  const handleImport = async () => {
+    const imported = await importVisitsFromJson();
+    if (!imported) return;
+    const added = onImportVisits(imported);
+    const skipped = imported.length - added;
+    notifyImportResult(
+      'Import complete',
+      `Added ${added} visit${added === 1 ? '' : 's'}` +
+        (skipped ? ` (${skipped} already here, skipped).` : '.')
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>History</Text>
-      <Pressable
-        style={[styles.exportButton, visits.length === 0 && styles.exportButtonDisabled]}
-        onPress={() => exportVisitsAsJson(visits)}
-        disabled={visits.length === 0}
-      >
-        <Text style={styles.exportButtonText}>📤 Export Data (JSON)</Text>
-      </Pressable>
+      <View style={styles.dataButtons}>
+        <Pressable
+          style={[styles.exportButton, visits.length === 0 && styles.exportButtonDisabled]}
+          onPress={() => exportVisitsAsJson(visits)}
+          disabled={visits.length === 0}
+        >
+          <Text style={styles.exportButtonText}>📤 Export</Text>
+        </Pressable>
+        <Pressable style={styles.exportButton} onPress={handleImport}>
+          <Text style={styles.exportButtonText}>📥 Import</Text>
+        </Pressable>
+      </View>
       <FlatList
         data={days}
         keyExtractor={(day) => day.key}
@@ -194,14 +214,19 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 12,
   },
+  dataButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
   exportButton: {
+    flex: 1,
     borderWidth: 1,
     borderColor: COLORS.neonTeal,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 16,
   },
   exportButtonDisabled: {
     opacity: 0.4,

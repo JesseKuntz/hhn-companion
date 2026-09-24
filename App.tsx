@@ -24,6 +24,7 @@ import {
 } from '@expo-google-fonts/oswald';
 import TallyScreen from './screens/TallyScreen';
 import HistoryScreen from './screens/HistoryScreen';
+import TotalsScreen from './screens/TotalsScreen';
 import { HOUSES } from './constants/houses';
 import { COLORS, FONTS } from './constants/theme';
 import type { Visit } from './types';
@@ -33,6 +34,7 @@ const MAX_CONTENT_WIDTH = 480;
 const TABS = [
   { key: 'tally', label: 'Tally', icon: '🏚️' },
   { key: 'history', label: 'History', icon: '🗓️' },
+  { key: 'totals', label: 'Totals', icon: '🎟️' },
 ];
 
 function makeId(): string {
@@ -81,6 +83,14 @@ export default function App() {
     setVisits((prev) => [...prev, { id: makeId(), houseId, timestamp }]);
   };
 
+  // merges by id, so re-importing the same file never duplicates visits
+  const importVisits = (imported: Visit[]): number => {
+    const existingIds = new Set(visits.map((v) => v.id));
+    const fresh = imported.filter((v) => !existingIds.has(v.id));
+    setVisits((prev) => [...prev, ...fresh]);
+    return fresh.length;
+  };
+
   const removeVisit = (visitId: string) => {
     setVisits((prev) => prev.filter((v) => v.id !== visitId));
   };
@@ -121,7 +131,11 @@ export default function App() {
                 visits={visits}
                 onAddVisit={addVisit}
                 onRemoveVisit={removeVisit}
+                onImportVisits={importVisits}
               />
+            </View>
+            <View key="totals" style={[styles.page, { width: pageWidth }]}>
+              <TotalsScreen visits={visits} />
             </View>
           </ScrollView>
           <View style={styles.tabBar}>
