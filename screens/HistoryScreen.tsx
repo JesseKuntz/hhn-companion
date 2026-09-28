@@ -11,13 +11,16 @@ import {
 } from 'react-native';
 import { HOUSES_ALPHABETICAL, HOUSE_BY_ID } from '../constants/houses';
 import { COLORS, FONTS } from '../constants/theme';
+import { groupVisitsIntoNights, type Night } from '../utils/nights';
 import { exportVisitsAsJson } from '../utils/export';
 import { importVisitsFromJson, notifyImportResult } from '../utils/import';
 import type { Visit } from '../types';
 
-type DayGroup = {
-  key: string;
-  visits: Visit[];
+type NightGroup = Night & {
+  // 1 = the first night ever logged
+  number: number;
+  // visits split by calendar date, so nights that cross midnight show both dates
+  dates: { key: string; visits: Visit[] }[];
 };
 
 function dayKeyFor(isoString: string): string {
@@ -26,6 +29,17 @@ function dayKeyFor(isoString: string): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function groupByDate(visits: Visit[]): NightGroup['dates'] {
+  const dates: NightGroup['dates'] = [];
+  visits.forEach((visit) => {
+    const key = dayKeyFor(visit.timestamp);
+    const last = dates[dates.length - 1];
+    if (last?.key === key) last.visits.push(visit);
+    else dates.push({ key, visits: [visit] });
+  });
+  return dates;
 }
 
 function formatDayHeader(dayKey: string): string {
@@ -59,34 +73,30 @@ export default function HistoryScreen({
   onRemoveVisit,
   onImportVisits,
 }: HistoryScreenProps) {
-  const [addingForDay, setAddingForDay] = useState<string | null>(null);
+  // keyed by the night's start timestamp
+  const [addingForNight, setAddingForNight] = useState<string | null>(null);
 
-  const days = useMemo<DayGroup[]>(() => {
-    const groups: Record<string, Visit[]> = {};
-    visits.forEach((visit) => {
-      const key = dayKeyFor(visit.timestamp);
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(visit);
-    });
-    Object.values(groups).forEach((list) =>
-      list.sort(
-        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      )
-    );
-    return Object.keys(groups)
-      .sort()
-      .reverse()
-      .map((key) => ({ key, visits: groups[key] }));
-  }, [visits]);
+  // newest night first
+  const nights = useMemo<NightGroup[]>(
+    () =>
+      groupVisitsIntoNights(visits)
+        .map((night, index) => ({
+          ...night,
+          number: index + 1,
+          dates: groupByDate(night.visits),
+        }))
+        .reverse(),
+    [visits]
+  );
 
   const handleAddHouse = (houseId: string) => {
-    const dayVisits = days.find((d) => d.key === addingForDay)?.visits ?? [];
-    const lastTimestamp = dayVisits.length
-      ? new Date(dayVisits[dayVisits.length - 1].timestamp)
+    const nightVisits = nights.find((n) => n.start === addingForNight)?.visits ?? [];
+    const lastTimestamp = nightVisits.length
+      ? new Date(nightVisits[nightVisits.length - 1].timestamp)
       : new Date();
     const timestamp = new Date(lastTimestamp.getTime() + 1000).toISOString();
     onAddVisit(houseId, timestamp);
-    setAddingForDay(null);
+    setAddingForNight(null);
   };
 
   const handleImport = async () => {
@@ -117,49 +127,54 @@ export default function HistoryScreen({
         </Pressable>
       </View>
       <FlatList
-        data={days}
-        keyExtractor={(day) => day.key}
+        data={nights}
+        keyExtractor={(night) => night.start}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <Text style={styles.empty}>No visits logged yet.</Text>
         }
-        renderItem={({ item: day }) => (
-          <View style={styles.dayGroup}>
-            <Text style={styles.dayHeader}>{formatDayHeader(day.key)}</Text>
-            {day.visits.map((visit) => {
-              const house = HOUSE_BY_ID[visit.houseId];
-              return (
-                <View key={visit.id} style={styles.visitRow}>
-                  <ImageBackground
-                    source={house?.image}
-                    style={styles.imageFill}
-                    resizeMode="cover"
-                  >
-                    <View style={styles.overlay} />
-                  </ImageBackground>
-                  <View style={styles.visitContent}>
-                    <View style={styles.visitInfo}>
-                      <Text style={styles.visitName}>
-                        {house?.name ?? 'Unknown house'}
-                      </Text>
-                      <Text style={styles.visitTime}>
-                        {formatTime(visit.timestamp)}
-                      </Text>
+        renderItem={({ item: night }) => (
+          <View style={styles.nightGroup}>
+            <Text style={styles.nightLabel}>Night {night.number}</Text>
+            {night.dates.map((date) => (
+              <View key={date.key}>
+                <Text style={styles.dayHeader}>{formatDayHeader(date.key)}</Text>
+                {date.visits.map((visit) => {
+                  const house = HOUSE_BY_ID[visit.houseId];
+                  return (
+                    <View key={visit.id} style={styles.visitRow}>
+                      <ImageBackground
+                        source={house?.image}
+                        style={styles.imageFill}
+                        resizeMode="cover"
+                      >
+                        <View style={styles.overlay} />
+                      </ImageBackground>
+                      <View style={styles.visitContent}>
+                        <View style={styles.visitInfo}>
+                          <Text style={styles.visitName}>
+                            {house?.name ?? 'Unknown house'}
+                          </Text>
+                          <Text style={styles.visitTime}>
+                            {formatTime(visit.timestamp)}
+                          </Text>
+                        </View>
+                        <Pressable
+                          onPress={() => onRemoveVisit(visit.id)}
+                          style={styles.deleteButton}
+                          hitSlop={8}
+                        >
+                          <Text style={styles.deleteText}>×</Text>
+                        </Pressable>
+                      </View>
                     </View>
-                    <Pressable
-                      onPress={() => onRemoveVisit(visit.id)}
-                      style={styles.deleteButton}
-                      hitSlop={8}
-                    >
-                      <Text style={styles.deleteText}>×</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              );
-            })}
+                  );
+                })}
+              </View>
+            ))}
             <Pressable
               style={styles.addButton}
-              onPress={() => setAddingForDay(day.key)}
+              onPress={() => setAddingForNight(night.start)}
             >
               <Text style={styles.addButtonText}>+ Add missed house</Text>
             </Pressable>
@@ -168,10 +183,10 @@ export default function HistoryScreen({
       />
 
       <Modal
-        visible={addingForDay !== null}
+        visible={addingForNight !== null}
         transparent
         animationType="slide"
-        onRequestClose={() => setAddingForDay(null)}
+        onRequestClose={() => setAddingForNight(null)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -191,7 +206,7 @@ export default function HistoryScreen({
             />
             <Pressable
               style={styles.modalCancel}
-              onPress={() => setAddingForDay(null)}
+              onPress={() => setAddingForNight(null)}
             >
               <Text style={styles.modalCancelText}>Cancel</Text>
             </Pressable>
@@ -246,8 +261,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 32,
   },
-  dayGroup: {
-    marginBottom: 22,
+  nightGroup: {
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 18,
+  },
+  nightLabel: {
+    fontSize: 13,
+    fontFamily: FONTS.bold,
+    color: COLORS.neonRed,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 8,
   },
   dayHeader: {
     fontSize: 15,
