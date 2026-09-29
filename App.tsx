@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -8,33 +8,30 @@ import {
   Text,
   useWindowDimensions,
   View,
-} from 'react-native';
-import {
-  SafeAreaProvider,
-  SafeAreaView,
-} from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFonts, Creepster_400Regular } from '@expo-google-fonts/creepster';
+} from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFonts, Creepster_400Regular } from "@expo-google-fonts/creepster";
 import {
   Oswald_400Regular,
   Oswald_500Medium,
   Oswald_600SemiBold,
   Oswald_700Bold,
-} from '@expo-google-fonts/oswald';
-import TallyScreen from './screens/TallyScreen';
-import HistoryScreen from './screens/HistoryScreen';
-import TotalsScreen from './screens/TotalsScreen';
-import { HOUSES } from './constants/houses';
-import { COLORS, FONTS } from './constants/theme';
-import type { Visit } from './types';
+} from "@expo-google-fonts/oswald";
+import TallyScreen from "./screens/TallyScreen";
+import HistoryScreen from "./screens/HistoryScreen";
+import TotalsScreen from "./screens/TotalsScreen";
+import { HOUSES } from "./constants/houses";
+import { COLORS, FONTS } from "./constants/theme";
+import type { Visit } from "./types";
 
-const STORAGE_KEY = 'hhn_visits';
+const STORAGE_KEY = "hhn_visits";
 const MAX_CONTENT_WIDTH = 480;
 const TABS = [
-  { key: 'tally', label: 'Tally', icon: '🏚️' },
-  { key: 'history', label: 'History', icon: '🗓️' },
-  { key: 'totals', label: 'Totals', icon: '🎟️' },
+  { key: "tally", label: "Tally", icon: "🏚️" },
+  { key: "history", label: "History", icon: "🗓️" },
+  { key: "totals", label: "Totals", icon: "🎟️" },
 ];
 
 function makeId(): string {
@@ -57,6 +54,7 @@ export default function App() {
   const [loaded, setLoaded] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const targetIndexRef = useRef<number | null>(null);
   const { width } = useWindowDimensions();
   const pageWidth = Math.min(width, MAX_CONTENT_WIDTH);
 
@@ -79,7 +77,10 @@ export default function App() {
     if (loaded) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(visits));
   }, [visits, loaded]);
 
-  const addVisit = (houseId: string, timestamp: string = new Date().toISOString()) => {
+  const addVisit = (
+    houseId: string,
+    timestamp: string = new Date().toISOString(),
+  ) => {
     setVisits((prev) => [...prev, { id: makeId(), houseId, timestamp }]);
   };
 
@@ -96,6 +97,8 @@ export default function App() {
   };
 
   const goToPage = (index: number) => {
+    if (index === pageIndex) return;
+    targetIndexRef.current = index;
     scrollRef.current?.scrollTo({ x: index * pageWidth, animated: true });
     // react-native-web doesn't fire onMomentumScrollEnd, so update right away
     setPageIndex(index);
@@ -103,6 +106,10 @@ export default function App() {
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const newIndex = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
+    if (targetIndexRef.current !== null) {
+      if (newIndex !== targetIndexRef.current) return;
+      targetIndexRef.current = null;
+    }
     setPageIndex(newIndex);
   };
 
@@ -120,6 +127,8 @@ export default function App() {
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             onScroll={handleScroll}
+            // a swipe takes over from any in-flight tab press animation
+            onScrollBeginDrag={() => (targetIndexRef.current = null)}
             scrollEventThrottle={16}
             style={styles.content}
           >
@@ -171,11 +180,11 @@ const styles = StyleSheet.create({
   outer: {
     flex: 1,
     backgroundColor: COLORS.background,
-    alignItems: 'center',
+    alignItems: "center",
   },
   container: {
     flex: 1,
-    width: '100%',
+    width: "100%",
     maxWidth: MAX_CONTENT_WIDTH,
     backgroundColor: COLORS.background,
   },
@@ -186,17 +195,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    position: 'absolute',
+    position: "absolute",
     left: 20,
     right: 20,
     bottom: 16,
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: COLORS.surface,
     borderRadius: 32,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: 6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 14,
@@ -205,7 +214,7 @@ const styles = StyleSheet.create({
   tabButton: {
     flex: 1,
     paddingVertical: 8,
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 26,
   },
   tabButtonActive: {
